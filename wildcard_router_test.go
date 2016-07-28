@@ -16,12 +16,32 @@ var (
 	Server = httptest.NewServer(mux)
 )
 
+type ModuleBeforeA struct {
+	wildcard_router.WildcardInterface
+}
+
+func (a ModuleBeforeA) Handle(w http.ResponseWriter, req *http.Request) bool {
+	if req.URL.Path == "/module_a0" {
+		w.Write([]byte("Module Before A handled"))
+		return true
+	}
+	return false
+}
+
 type ModuleA struct {
 	wildcard_router.WildcardInterface
 }
 
 func (a ModuleA) Handle(w http.ResponseWriter, req *http.Request) bool {
+	if req.URL.Path == "/module_a0" {
+		w.Write([]byte("Module A handled"))
+		return true
+	}
 	if req.URL.Path == "/module_a" {
+		w.Write([]byte("Module A handled"))
+		return true
+	}
+	if req.URL.Path == "/module_ab" {
 		w.Write([]byte("Module A handled"))
 		return true
 	}
@@ -37,11 +57,16 @@ func (b ModuleB) Handle(w http.ResponseWriter, req *http.Request) bool {
 		w.Write([]byte("Module B handled"))
 		return true
 	}
+	if req.URL.Path == "/module_ab" {
+		w.Write([]byte("Module B handled"))
+		return true
+	}
 	return false
 }
 
 func init() {
 	WildcardRouter := wildcard_router.New(mux)
+	WildcardRouter.AddHandler(ModuleBeforeA{})
 	WildcardRouter.AddHandler(ModuleA{})
 	WildcardRouter.AddHandler(ModuleB{})
 }
@@ -56,6 +81,7 @@ func TestWildcardRouter(t *testing.T) {
 		{URL: "/module_a", ExpectHasContent: "Module A handled"},
 		{URL: "/module_b", ExpectHasContent: "Module B handled"},
 		{URL: "/module_x", ExpectHasContent: "404 page not found"},
+		{URL: "/module_a0", ExpectHasContent: "Module Before A handled"},
 	}
 
 	for i, testCase := range testCases {
