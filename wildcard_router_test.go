@@ -90,7 +90,7 @@ func TestWildcardRouter(t *testing.T) {
 			hasError = true
 		}
 		if !hasError {
-			t.Errorf(color.GreenString(fmt.Sprintf("WildcardRouter #%v: Success", i+1)))
+			fmt.Printf(color.GreenString(fmt.Sprintf("WildcardRouter #%v: Success\n", i+1)))
 		}
 	}
 }
