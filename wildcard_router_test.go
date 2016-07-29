@@ -22,7 +22,10 @@ type ModuleBeforeA struct {
 
 func (a ModuleBeforeA) Handle(w http.ResponseWriter, req *http.Request) bool {
 	if req.URL.Path == "/module_a0" {
-		w.Write([]byte("Module Before A handled"))
+		_, err := w.Write([]byte("Module Before A handled"))
+		if err != nil {
+			panic("ModuleBeforeA A can't handle")
+		}
 		return true
 	}
 	return false
@@ -33,16 +36,11 @@ type ModuleA struct {
 }
 
 func (a ModuleA) Handle(w http.ResponseWriter, req *http.Request) bool {
-	if req.URL.Path == "/module_a0" {
-		w.Write([]byte("Module A handled"))
-		return true
-	}
-	if req.URL.Path == "/module_a" {
-		w.Write([]byte("Module A handled"))
-		return true
-	}
-	if req.URL.Path == "/module_ab" {
-		w.Write([]byte("Module A handled"))
+	if req.URL.Path == "/module_a0" || req.URL.Path == "/module_a" || req.URL.Path == "/module_ab" {
+		_, err := w.Write([]byte("Module A handled"))
+		if err != nil {
+			panic("Module A can't handle")
+		}
 		return true
 	}
 	return false
@@ -53,12 +51,11 @@ type ModuleB struct {
 }
 
 func (b ModuleB) Handle(w http.ResponseWriter, req *http.Request) bool {
-	if req.URL.Path == "/module_b" {
-		w.Write([]byte("Module B handled"))
-		return true
-	}
-	if req.URL.Path == "/module_ab" {
-		w.Write([]byte("Module B handled"))
+	if req.URL.Path == "/module_b" || req.URL.Path == "/module_ab" {
+		_, err := w.Write([]byte("Module B handled"))
+		if err != nil {
+			panic("Module B can't handle")
+		}
 		return true
 	}
 	return false
