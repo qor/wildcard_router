@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/fatih/color"
+	"github.com/gin-gonic/gin"
 	"github.com/qor/wildcard_router"
 )
 
@@ -53,7 +54,12 @@ func (b ModuleB) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 }
 
 func init() {
+	router := gin.Default()
+	router.GET("/", func(c *gin.Context) {
+		c.Writer.Write([]byte("Gin Handle HomePage"))
+	})
 	WildcardRouter := wildcard_router.New(mux)
+	WildcardRouter.AddHandler(router)
 	WildcardRouter.AddHandler(ModuleBeforeA{})
 	WildcardRouter.AddHandler(ModuleA{})
 	WildcardRouter.AddHandler(ModuleB{})
@@ -61,22 +67,28 @@ func init() {
 
 type WildcardRouterTestCase struct {
 	URL              string
+	ExpectStatusCode int
 	ExpectHasContent string
 }
 
 func TestWildcardRouter(t *testing.T) {
 	testCases := []WildcardRouterTestCase{
-		{URL: "/module_a", ExpectHasContent: "Module A handled"},
-		{URL: "/module_b", ExpectHasContent: "Module B handled"},
-		{URL: "/module_x", ExpectHasContent: "404 page not found"},
-		{URL: "/module_a0", ExpectHasContent: "Module Before A handled"},
+		{URL: "/", ExpectStatusCode: 200, ExpectHasContent: "Gin Handle HomePage"},
+		{URL: "/module_a", ExpectStatusCode: 200, ExpectHasContent: "Module A handled"},
+		{URL: "/module_b", ExpectStatusCode: 200, ExpectHasContent: "Module B handled"},
+		{URL: "/module_x", ExpectStatusCode: 404, ExpectHasContent: "404 page not found\n"},
+		{URL: "/module_a0", ExpectStatusCode: 200, ExpectHasContent: "Module Before A handled"},
 	}
 
 	for i, testCase := range testCases {
 		var hasError bool
 		req, _ := http.Get(Server.URL + testCase.URL)
 		content, _ := ioutil.ReadAll(req.Body)
-		if string(content) == testCase.ExpectHasContent {
+		if req.StatusCode != testCase.ExpectStatusCode {
+			t.Errorf(color.RedString(fmt.Sprintf("WildcardRouter #%v: HTML expect status code '%v', but got '%v'", i+1, testCase.ExpectStatusCode, req.StatusCode)))
+			hasError = true
+		}
+		if string(content) != testCase.ExpectHasContent {
 			t.Errorf(color.RedString(fmt.Sprintf("WildcardRouter #%v: HTML expect have content '%v', but got '%v'", i+1, testCase.ExpectHasContent, string(content))))
 			hasError = true
 		}

@@ -40,6 +40,7 @@ func (w *WildcardRouterWriter) WriteHeader(statusCode int) {
 
 func (w *WildcardRouterWriter) Write(data []byte) (int, error) {
 	if w.skipCheckStatus || w.tmpStatus != http.StatusNotFound {
+		w.finalStatus = http.StatusOK
 		return w.ResponseWriter.Write(data)
 	} else {
 		return 0, nil
