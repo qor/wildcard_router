@@ -7,10 +7,14 @@ type WildcardRouter struct {
 	Handlers []http.Handler
 }
 
+// WildcardRouterWriter will used to capture status
 type WildcardRouterWriter struct {
 	http.ResponseWriter
-	tmpStatus       int
-	finalStatus     int
+	// Storage status for each handler, will be reset after goes to next handler
+	tmpStatus int
+	// Storage the real status
+	finalStatus int
+	// Used to skip status check
 	skipCheckStatus bool
 }
 
@@ -30,6 +34,7 @@ func (w *WildcardRouter) AddHandler(handler http.Handler) {
 	w.Handlers = append(w.Handlers, handler)
 }
 
+// WriteHeader will only set status code if request isn't 404
 func (w *WildcardRouterWriter) WriteHeader(statusCode int) {
 	if w.skipCheckStatus || statusCode != http.StatusNotFound {
 		w.finalStatus = statusCode
@@ -38,30 +43,32 @@ func (w *WildcardRouterWriter) WriteHeader(statusCode int) {
 	w.tmpStatus = statusCode
 }
 
+// Write will only set content if request isn't 404
 func (w *WildcardRouterWriter) Write(data []byte) (int, error) {
 	if w.skipCheckStatus || w.tmpStatus != http.StatusNotFound {
 		w.finalStatus = http.StatusOK
 		return w.ResponseWriter.Write(data)
-	} else {
-		return 0, nil
 	}
+	return 0, nil
 }
 
-func (w WildcardRouterWriter) MatchedStatus() bool {
-	return w.Status() != http.StatusNotFound && w.Status() != 0
-}
-
-func (w *WildcardRouterWriter) FocusNotFound(req *http.Request) {
+// ForceNotFound will force set request as not found
+func (w *WildcardRouterWriter) ForceNotFound(req *http.Request) {
 	w.skipCheckStatus = true
 	http.NotFound(w, req)
 }
 
+// Status will return request's status code
 func (w WildcardRouterWriter) Status() int {
 	return w.finalStatus
 }
 
-func (w *WildcardRouterWriter) Reset() {
+func (w *WildcardRouterWriter) reset() {
 	w.skipCheckStatus = false
 	w.finalStatus = 0
 	w.tmpStatus = 0
+}
+
+func (w WildcardRouterWriter) matchedStatus() bool {
+	return w.Status() != http.StatusNotFound && w.Status() != 0
 }

@@ -7,14 +7,14 @@ func (w *WildcardRouter) WildcardHandle(writer *WildcardRouterWriter, req *http.
 	var matched bool
 	for _, handler := range w.Handlers {
 		handler.ServeHTTP(writer, req)
-		if writer.MatchedStatus() {
+		if writer.matchedStatus() {
 			matched = true
 			break
 		}
-		writer.Reset()
+		writer.reset()
 	}
 	if !matched {
-		writer.FocusNotFound(req)
-		writer.Reset()
+		writer.ForceNotFound(req)
+		writer.reset()
 	}
 }

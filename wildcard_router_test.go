@@ -26,6 +26,8 @@ func (a ModuleBeforeA) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		if err != nil {
 			panic("ModuleBeforeA A can't handle")
 		}
+	} else {
+		http.NotFound(w, req)
 	}
 }
 
@@ -38,6 +40,8 @@ func (a ModuleA) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		if err != nil {
 			panic("Module A can't handle")
 		}
+	} else {
+		http.NotFound(w, req)
 	}
 }
 
@@ -50,6 +54,8 @@ func (b ModuleB) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		if err != nil {
 			panic("Module B can't handle")
 		}
+	} else {
+		http.NotFound(w, req)
 	}
 }
 

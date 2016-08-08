@@ -21,38 +21,33 @@ import (
 )
 
 type ModuleA struct {
-	wildcard_router.WildcardInterface
 }
 
-func (a ModuleA) Handle(w http.ResponseWriter, req *http.Request) bool {
+func (a ModuleA) ServeHTTP(w http.ResponseWriter, req *http.Request) {
     // Module A has records:
     //   Record1(URL: /page1, Content: aaa)
     //   Record2(URL: /page2, Content: aaa1)
 	if all records' URL contains req.URL.Path {
 		w.Write([]byte(aaa or aaa1))
-		return true
 	}
-	return false
 }
 
 type ModuleB struct {
-	wildcard_router.WildcardInterface
 }
 
-func (b ModuleB) Handle(w http.ResponseWriter, req *http.Request) bool {
+func (b ModuleB) ServeHTTP(w http.ResponseWriter, req *http.Request) bool {
     // Module B has records:
     //   Record1(URL: /p1, Content: bbb)
     //   Record2(URL: /p2, Content: bbb1)
 	if all records' URL contains req.URL.Path {
 		w.Write([]byte(bbb or bbb1))
-		return true
 	}
-	return false
 }
 
 func main() {
 	mux := http.NewServeMux()
 	WildcardRouter := wildcard_router.New(mux)
+    // Any module the implement ServeHTTP could be add as handler
 	WildcardRouter.AddHandler(ModuleA{})
 	WildcardRouter.AddHandler(ModuleB{})
 
