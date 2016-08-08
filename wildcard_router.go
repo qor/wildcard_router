@@ -14,11 +14,6 @@ type WildcardRouterWriter struct {
 	skipCheckStatus bool
 }
 
-// WildcardInterface defined interfaces using to handle a router
-type WildcardInterface interface {
-	Handle(w http.ResponseWriter, req *http.Request) bool
-}
-
 // New will create a WildcardRouter and mount wildcard router to mux
 func New(mux *http.ServeMux) *WildcardRouter {
 	w := &WildcardRouter{}
@@ -37,7 +32,6 @@ func (w *WildcardRouter) AddHandler(handler http.Handler) {
 
 func (w *WildcardRouterWriter) WriteHeader(statusCode int) {
 	if w.skipCheckStatus || statusCode != http.StatusNotFound {
-		w.skipCheckStatus = false
 		w.finalStatus = statusCode
 		w.ResponseWriter.WriteHeader(statusCode)
 	}
@@ -45,7 +39,7 @@ func (w *WildcardRouterWriter) WriteHeader(statusCode int) {
 }
 
 func (w *WildcardRouterWriter) Write(data []byte) (int, error) {
-	if w.tmpStatus != http.StatusNotFound {
+	if w.skipCheckStatus || w.tmpStatus != http.StatusNotFound {
 		return w.ResponseWriter.Write(data)
 	} else {
 		return 0, nil
@@ -63,4 +57,10 @@ func (w *WildcardRouterWriter) FocusNotFound(req *http.Request) {
 
 func (w WildcardRouterWriter) Status() int {
 	return w.finalStatus
+}
+
+func (w *WildcardRouterWriter) Reset() {
+	w.skipCheckStatus = false
+	w.finalStatus = 0
+	w.tmpStatus = 0
 }

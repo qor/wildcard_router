@@ -11,8 +11,10 @@ func (w *WildcardRouter) WildcardHandle(writer *WildcardRouterWriter, req *http.
 			matched = true
 			break
 		}
+		writer.Reset()
 	}
 	if !matched {
 		writer.FocusNotFound(req)
+		writer.Reset()
 	}
 }

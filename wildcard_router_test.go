@@ -2,13 +2,13 @@ package wildcard_router_test
 
 import (
 	"fmt"
-	"github.com/fatih/color"
-	"github.com/qor/wildcard_router"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
-	"strings"
 	"testing"
+
+	"github.com/fatih/color"
+	"github.com/qor/wildcard_router"
 )
 
 var (
@@ -17,48 +17,39 @@ var (
 )
 
 type ModuleBeforeA struct {
-	wildcard_router.WildcardInterface
 }
 
-func (a ModuleBeforeA) Handle(w http.ResponseWriter, req *http.Request) bool {
+func (a ModuleBeforeA) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	if req.URL.Path == "/module_a0" {
 		_, err := w.Write([]byte("Module Before A handled"))
 		if err != nil {
 			panic("ModuleBeforeA A can't handle")
 		}
-		return true
 	}
-	return false
 }
 
 type ModuleA struct {
-	wildcard_router.WildcardInterface
 }
 
-func (a ModuleA) Handle(w http.ResponseWriter, req *http.Request) bool {
+func (a ModuleA) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	if req.URL.Path == "/module_a0" || req.URL.Path == "/module_a" || req.URL.Path == "/module_ab" {
 		_, err := w.Write([]byte("Module A handled"))
 		if err != nil {
 			panic("Module A can't handle")
 		}
-		return true
 	}
-	return false
 }
 
 type ModuleB struct {
-	wildcard_router.WildcardInterface
 }
 
-func (b ModuleB) Handle(w http.ResponseWriter, req *http.Request) bool {
+func (b ModuleB) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	if req.URL.Path == "/module_b" || req.URL.Path == "/module_ab" {
 		_, err := w.Write([]byte("Module B handled"))
 		if err != nil {
 			panic("Module B can't handle")
 		}
-		return true
 	}
-	return false
 }
 
 func init() {
@@ -85,7 +76,7 @@ func TestWildcardRouter(t *testing.T) {
 		var hasError bool
 		req, _ := http.Get(Server.URL + testCase.URL)
 		content, _ := ioutil.ReadAll(req.Body)
-		if !strings.Contains(string(content), testCase.ExpectHasContent) {
+		if string(content) == testCase.ExpectHasContent {
 			t.Errorf(color.RedString(fmt.Sprintf("WildcardRouter #%v: HTML expect have content '%v', but got '%v'", i+1, testCase.ExpectHasContent, string(content))))
 			hasError = true
 		}
