@@ -2,82 +2,73 @@ package wildcard_router
 
 import "net/http"
 
-// WildcardRouter is holder of registed handlers
+// WildcardRouter holds registered route handlers
 type WildcardRouter struct {
 	Handlers []http.Handler
 }
 
-// New will create a WildcardRouter and mount wildcard router to mux
+// New will create a WildcardRouter and mount it to http mux
 func New(mux *http.ServeMux) *WildcardRouter {
 	w := &WildcardRouter{}
 	mux.Handle("/", w)
 	return w
 }
 
+// AddHandler will append new handler to Handlers
+func (w *WildcardRouter) AddHandler(handler http.Handler) {
+	w.Handlers = append(w.Handlers, handler)
+}
+
 func (w *WildcardRouter) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
-	wildcardRouterWriter := &WildcardRouterWriter{writer, 0, 0, false}
+	wildcardRouterWriter := &WildcardRouterWriter{writer, 0, false}
 
 	for _, handler := range w.Handlers {
-		if handler.ServeHTTP(wildcardRouterWriter, req); wildcardRouterWriter.hasValidStatus() {
+		if handler.ServeHTTP(wildcardRouterWriter, req); wildcardRouterWriter.isProcessed() {
 			return
 		}
 		wildcardRouterWriter.reset()
 	}
 
-	wildcardRouterWriter.ForceNotFound(req)
-}
-
-// AddHandler will append a new handler to Handlers
-func (w *WildcardRouter) AddHandler(handler http.Handler) {
-	w.Handlers = append(w.Handlers, handler)
+	wildcardRouterWriter.skipNotFoundCheck = true
+	http.NotFound(wildcardRouterWriter, req)
 }
 
 // WildcardRouterWriter will used to capture status
 type WildcardRouterWriter struct {
 	http.ResponseWriter
-	// Storage status for each handler, will be reset after goes to next handler
-	tmpStatus int
-	// Storage the real status
-	finalStatus int
+	// Keep status code
+	status int
 	// Used to skip status check
-	skipCheckStatus bool
+	skipNotFoundCheck bool
 }
 
-// WriteHeader will only set status code if request isn't 404
+// Status will return request's status code
+func (w WildcardRouterWriter) Status() int {
+	return w.status
+}
+
+// WriteHeader only set status code when not 404
 func (w *WildcardRouterWriter) WriteHeader(statusCode int) {
-	if w.skipCheckStatus || statusCode != http.StatusNotFound {
-		w.finalStatus = statusCode
+	if w.skipNotFoundCheck || statusCode != http.StatusNotFound {
 		w.ResponseWriter.WriteHeader(statusCode)
 	}
-	w.tmpStatus = statusCode
+	w.status = statusCode
 }
 
-// Write will only set content if request isn't 404
+// Write only set content when not 404
 func (w *WildcardRouterWriter) Write(data []byte) (int, error) {
-	if w.skipCheckStatus || w.tmpStatus != http.StatusNotFound {
-		w.finalStatus = http.StatusOK
+	if w.skipNotFoundCheck || w.status != http.StatusNotFound {
+		w.status = http.StatusOK
 		return w.ResponseWriter.Write(data)
 	}
 	return 0, nil
 }
 
-// ForceNotFound will force set request as not found
-func (w *WildcardRouterWriter) ForceNotFound(req *http.Request) {
-	w.skipCheckStatus = true
-	http.NotFound(w, req)
-}
-
-// Status will return request's status code
-func (w WildcardRouterWriter) Status() int {
-	return w.finalStatus
-}
-
 func (w *WildcardRouterWriter) reset() {
-	w.skipCheckStatus = false
-	w.finalStatus = 0
-	w.tmpStatus = 0
+	w.skipNotFoundCheck = false
+	w.status = 0
 }
 
-func (w WildcardRouterWriter) hasValidStatus() bool {
-	return w.finalStatus != http.StatusNotFound && w.finalStatus != 0
+func (w WildcardRouterWriter) isProcessed() bool {
+	return w.status != http.StatusNotFound && w.status != 0
 }
