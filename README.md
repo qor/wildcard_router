@@ -1,15 +1,12 @@
 # WildcardRouter
 
-WildcardRouter is component that used to handle wildcard routers.
+WildcardRouter is component that used to handle dynamic routing.
 
-You could choose wildcard_router to satisfy below scenario:
+You could use wildcard_router to satisfy below scenario:
 
-* You have a Module A that could
-  - Store a record with URL and Content
-  - Have handle and will return content if the URL match one of the records' URL
-* You have a Module B have same behaviour as Module A
-
-Using wildcard_router will help you choose correct handler.
+* You have a Module `Page` that handle requests based on saved page URL
+* You have another Module `FAQ` also handle requests based on saved page URL
+* Those URLs could be any things, with no rule
 
 [![GoDoc](https://godoc.org/github.com/qor/wildcard_router?status.svg)](https://godoc.org/github.com/qor/wildcard_router)
 
@@ -20,42 +17,54 @@ import (
 	"github.com/qor/wildcard_router"
 )
 
-type ModuleA struct {
-}
+type PageHandler struct {}
 
-func (a ModuleA) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-    // Module A has records:
-    //   Record1(URL: /page1, Content: aaa)
-    //   Record2(URL: /page2, Content: aaa1)
-	if all records' URL contains req.URL.Path {
-		w.Write([]byte(aaa or aaa1))
+func (PageHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+    // Page Model definition:
+    // type Page struct {
+    // 	 URL string
+    //   Body string
+    // }
+    // Page has below records:
+    //   Record1(URL: /page1, Content: "Page1")
+    //   Record2(URL: /page2, Content: "Page2")
+  var page Page
+	if !db.First(&page, "url = ?", req.URL.Path).RecordNotFound() {
+		w.Write([]byte(page.Body))
 	}
 }
 
-type ModuleB struct {
-}
+type FAQHandler struct {}
 
-func (b ModuleB) ServeHTTP(w http.ResponseWriter, req *http.Request) bool {
-    // Module B has records:
-    //   Record1(URL: /p1, Content: bbb)
-    //   Record2(URL: /p2, Content: bbb1)
-	if all records' URL contains req.URL.Path {
-		w.Write([]byte(bbb or bbb1))
+func (FAQHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+    // FAQ Model definition:
+    // type FAQ struct {
+    // 	 URL      string
+    //   Question string
+    //   Answer   string
+    // }
+    // FAQ has below records:
+    //   Record1(URL: /faq1, Question: "FAQ1", Answer: "Answer1")
+    //   Record2(URL: /faq2, Question: "FAQ2", Answer: "Answer2")
+  var faq FAQ
+	if !db.First(&faq, "url = ?", req.URL.Path).RecordNotFound() {
+		w.Write([]byte(fmt.Sprintf("%v: %v", faq.Question, faq.Answer)))
 	}
 }
 
 func main() {
 	mux := http.NewServeMux()
-	WildcardRouter := wildcard_router.New(mux)
-	// Any module the implement ServeHTTP could be add as handler
-	WildcardRouter.AddHandler(ModuleA{})
-	WildcardRouter.AddHandler(ModuleB{})
+	wildcardRouter := wildcard_router.New(mux)
 
-	// Visit /page1 will return "aaa"
-	// Visit /page2 will return "aaa1"
-	// Visit /p1 will return "bbb"
-	// Visit /p2 will return "bbb1"
-	// Visit /unknow will return "404 page not found"
+	// Any module that implemented method ServeHTTP could be Handler
+	wildcardRouter.AddHandler(PageHandler{})
+	wildcardRouter.AddHandler(FAQHandler{})
+
+	// Visit "/page1"   will return "Page1"
+	// Visit "/page2"   will return "Page2"
+	// Visit "/faq1"    will return "FAQ1: Answer1"
+	// Visit "/faq2"    will return "FAQ2: Answer2"
+	// Visit "/unknown" will return "404 page not found" with statu code 404
 }
 ```
 
