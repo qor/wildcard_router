@@ -54,7 +54,9 @@ func (FAQHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 
 func main() {
 	mux := http.NewServeMux()
-	wildcardRouter := wildcard_router.New(mux)
+
+	wildcardRouter := wildcard_router.New()
+	wildcardRouter.MountTo("/", mux)
 
 	// Any module that implemented method ServeHTTP could be Handler
 	wildcardRouter.AddHandler(PageHandler{})

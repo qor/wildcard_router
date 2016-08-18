@@ -64,11 +64,13 @@ func init() {
 	router.GET("/", func(c *gin.Context) {
 		c.Writer.Write([]byte("Gin Handle HomePage"))
 	})
-	WildcardRouter := wildcard_router.New(mux)
-	WildcardRouter.AddHandler(router)
-	WildcardRouter.AddHandler(ModuleBeforeA{})
-	WildcardRouter.AddHandler(ModuleA{})
-	WildcardRouter.AddHandler(ModuleB{})
+
+	wildcardRouter := wildcard_router.New()
+	wildcardRouter.MountTo("/", mux)
+	wildcardRouter.AddHandler(router)
+	wildcardRouter.AddHandler(ModuleBeforeA{})
+	wildcardRouter.AddHandler(ModuleA{})
+	wildcardRouter.AddHandler(ModuleB{})
 }
 
 type WildcardRouterTestCase struct {

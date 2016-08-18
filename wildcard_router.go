@@ -1,28 +1,37 @@
 package wildcard_router
 
-import "net/http"
+import (
+	"net/http"
+	"strings"
+)
 
 // WildcardRouter holds registered route handlers
 type WildcardRouter struct {
-	Handlers []http.Handler
+	handlers []http.Handler
 }
 
-// New will create a WildcardRouter and mount it to http mux
-func New(mux *http.ServeMux) *WildcardRouter {
-	w := &WildcardRouter{}
-	mux.Handle("/", w)
-	return w
+// New return a new WildcardRouter
+func New() *WildcardRouter {
+	return &WildcardRouter{}
+}
+
+// MountTo mount the service into mux (HTTP request multiplexer) with given path
+func (w *WildcardRouter) MountTo(mountTo string, mux *http.ServeMux) {
+	mountTo = "/" + strings.Trim(mountTo, "/")
+
+	mux.Handle(mountTo, w)
+	mux.Handle(mountTo+"/", w)
 }
 
 // AddHandler will append new handler to Handlers
 func (w *WildcardRouter) AddHandler(handler http.Handler) {
-	w.Handlers = append(w.Handlers, handler)
+	w.handlers = append(w.handlers, handler)
 }
 
 func (w *WildcardRouter) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
 	wildcardRouterWriter := &WildcardRouterWriter{writer, 0, false}
 
-	for _, handler := range w.Handlers {
+	for _, handler := range w.handlers {
 		if handler.ServeHTTP(wildcardRouterWriter, req); wildcardRouterWriter.isProcessed() {
 			return
 		}
