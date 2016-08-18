@@ -47,17 +47,16 @@ func (b ModuleB) ServeHTTP(w http.ResponseWriter, req *http.Request) bool {
 func main() {
 	mux := http.NewServeMux()
 	WildcardRouter := wildcard_router.New(mux)
-    // Any module the implement ServeHTTP could be add as handler
+	// Any module the implement ServeHTTP could be add as handler
 	WildcardRouter.AddHandler(ModuleA{})
 	WildcardRouter.AddHandler(ModuleB{})
 
-    // Visit /page1 will return "aaa"
-    // Visit /page2 will return "aaa1"
-    // Visit /p1 will return "bbb"
-    // Visit /p2 will return "bbb1"
-    // Visit /unknow will return "404 page not found"
+	// Visit /page1 will return "aaa"
+	// Visit /page2 will return "aaa1"
+	// Visit /p1 will return "bbb"
+	// Visit /p2 will return "bbb1"
+	// Visit /unknow will return "404 page not found"
 }
-
 ```
 
 ## License

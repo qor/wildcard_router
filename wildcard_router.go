@@ -7,6 +7,31 @@ type WildcardRouter struct {
 	Handlers []http.Handler
 }
 
+// New will create a WildcardRouter and mount wildcard router to mux
+func New(mux *http.ServeMux) *WildcardRouter {
+	w := &WildcardRouter{}
+	mux.Handle("/", w)
+	return w
+}
+
+func (w *WildcardRouter) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
+	wildcardRouterWriter := &WildcardRouterWriter{writer, 0, 0, false}
+
+	for _, handler := range w.Handlers {
+		if handler.ServeHTTP(wildcardRouterWriter, req); wildcardRouterWriter.hasValidStatus() {
+			return
+		}
+		wildcardRouterWriter.reset()
+	}
+
+	wildcardRouterWriter.ForceNotFound(req)
+}
+
+// AddHandler will append a new handler to Handlers
+func (w *WildcardRouter) AddHandler(handler http.Handler) {
+	w.Handlers = append(w.Handlers, handler)
+}
+
 // WildcardRouterWriter will used to capture status
 type WildcardRouterWriter struct {
 	http.ResponseWriter
@@ -16,22 +41,6 @@ type WildcardRouterWriter struct {
 	finalStatus int
 	// Used to skip status check
 	skipCheckStatus bool
-}
-
-// New will create a WildcardRouter and mount wildcard router to mux
-func New(mux *http.ServeMux) *WildcardRouter {
-	w := &WildcardRouter{}
-	mux.Handle("/", w)
-	return w
-}
-
-func (w *WildcardRouter) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
-	w.WildcardHandle(&WildcardRouterWriter{writer, 0, 0, false}, req)
-}
-
-// AddHandler will append a new handler to Handlers
-func (w *WildcardRouter) AddHandler(handler http.Handler) {
-	w.Handlers = append(w.Handlers, handler)
 }
 
 // WriteHeader will only set status code if request isn't 404
@@ -69,6 +78,6 @@ func (w *WildcardRouterWriter) reset() {
 	w.tmpStatus = 0
 }
 
-func (w WildcardRouterWriter) matchedStatus() bool {
-	return w.Status() != http.StatusNotFound && w.Status() != 0
+func (w WildcardRouterWriter) hasValidStatus() bool {
+	return w.finalStatus != http.StatusNotFound && w.finalStatus != 0
 }
