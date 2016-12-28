@@ -7,7 +7,8 @@ import (
 
 // WildcardRouter holds registered route handlers
 type WildcardRouter struct {
-	handlers []http.Handler
+	middlewares []func(writer http.ResponseWriter, request *http.Request)
+	handlers    []http.Handler
 }
 
 // New return a new WildcardRouter
@@ -28,8 +29,18 @@ func (w *WildcardRouter) AddHandler(handler http.Handler) {
 	w.handlers = append(w.handlers, handler)
 }
 
+// Use will append new middleware
+func (w *WildcardRouter) Use(middleware func(writer http.ResponseWriter, request *http.Request)) {
+	w.middlewares = append(w.middlewares, middleware)
+}
+
+// ServeHTTP serve http for wildcard router
 func (w *WildcardRouter) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
 	wildcardRouterWriter := &WildcardRouterWriter{writer, 0, false}
+
+	for _, middleware := range w.middlewares {
+		middleware(writer, req)
+	}
 
 	for _, handler := range w.handlers {
 		if handler.ServeHTTP(wildcardRouterWriter, req); wildcardRouterWriter.isProcessed() {
