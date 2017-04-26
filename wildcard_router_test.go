@@ -61,6 +61,7 @@ func (b ModuleB) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 
 func init() {
 	router := gin.Default()
+
 	router.GET("/", func(c *gin.Context) {
 		c.Writer.Write([]byte("Gin Handle HomePage"))
 	})
@@ -71,6 +72,9 @@ func init() {
 	wildcardRouter.AddHandler(ModuleBeforeA{})
 	wildcardRouter.AddHandler(ModuleA{})
 	wildcardRouter.AddHandler(ModuleB{})
+	wildcardRouter.NotFoundHandler(func(w http.ResponseWriter, req *http.Request) {
+		w.Write([]byte("Sorry, this page was gone!"))
+	})
 }
 
 type WildcardRouterTestCase struct {
@@ -84,7 +88,7 @@ func TestWildcardRouter(t *testing.T) {
 		{URL: "/", ExpectStatusCode: 200, ExpectHasContent: "Gin Handle HomePage"},
 		{URL: "/module_a", ExpectStatusCode: 200, ExpectHasContent: "Module A handled"},
 		{URL: "/module_b", ExpectStatusCode: 200, ExpectHasContent: "Module B handled"},
-		{URL: "/module_x", ExpectStatusCode: 404, ExpectHasContent: "404 page not found\n"},
+		{URL: "/module_x", ExpectStatusCode: 404, ExpectHasContent: "Sorry, this page was gone!"},
 		{URL: "/module_a0", ExpectStatusCode: 200, ExpectHasContent: "Module Before A handled"},
 	}
 

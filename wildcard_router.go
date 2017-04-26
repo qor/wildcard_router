@@ -7,8 +7,9 @@ import (
 
 // WildcardRouter holds registered route handlers
 type WildcardRouter struct {
-	middlewares []func(writer http.ResponseWriter, request *http.Request)
-	handlers    []http.Handler
+	middlewares     []func(writer http.ResponseWriter, request *http.Request)
+	handlers        []http.Handler
+	notFoundHandler http.HandlerFunc
 }
 
 // New return a new WildcardRouter
@@ -27,6 +28,11 @@ func (w *WildcardRouter) MountTo(mountTo string, mux *http.ServeMux) {
 // AddHandler will append new handler to Handlers
 func (w *WildcardRouter) AddHandler(handler http.Handler) {
 	w.handlers = append(w.handlers, handler)
+}
+
+// NotFoundHandler will set handler to handle 404
+func (w *WildcardRouter) NotFoundHandler(handler http.HandlerFunc) {
+	w.notFoundHandler = handler
 }
 
 // Use will append new middleware
@@ -50,7 +56,12 @@ func (w *WildcardRouter) ServeHTTP(writer http.ResponseWriter, req *http.Request
 	}
 
 	wildcardRouterWriter.skipNotFoundCheck = true
-	http.NotFound(wildcardRouterWriter, req)
+	if w.notFoundHandler != nil {
+		writer.WriteHeader(http.StatusNotFound)
+		w.notFoundHandler(writer, req)
+	} else {
+		http.NotFound(wildcardRouterWriter, req)
+	}
 }
 
 // WildcardRouterWriter will used to capture status
