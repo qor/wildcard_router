@@ -72,7 +72,7 @@ func init() {
 	wildcardRouter.AddHandler(ModuleBeforeA{})
 	wildcardRouter.AddHandler(ModuleA{})
 	wildcardRouter.AddHandler(ModuleB{})
-	wildcardRouter.NotFoundHandler(func(w http.ResponseWriter, req *http.Request) {
+	wildcardRouter.NoRoute(func(w http.ResponseWriter, req *http.Request) {
 		w.Write([]byte("Sorry, this page was gone!"))
 	})
 }

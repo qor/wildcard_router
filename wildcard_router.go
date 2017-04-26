@@ -30,8 +30,8 @@ func (w *WildcardRouter) AddHandler(handler http.Handler) {
 	w.handlers = append(w.handlers, handler)
 }
 
-// NotFoundHandler will set handler to handle 404
-func (w *WildcardRouter) NotFoundHandler(handler http.HandlerFunc) {
+// NoRoute will set handler to handle 404
+func (w *WildcardRouter) NoRoute(handler http.HandlerFunc) {
 	w.notFoundHandler = handler
 }
 
