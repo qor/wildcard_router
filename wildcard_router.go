@@ -57,7 +57,6 @@ func (w *WildcardRouter) ServeHTTP(writer http.ResponseWriter, req *http.Request
 
 	wildcardRouterWriter.skipNotFoundCheck = true
 	if w.notFoundHandler != nil {
-		writer.WriteHeader(http.StatusNotFound)
 		w.notFoundHandler(writer, req)
 	} else {
 		http.NotFound(wildcardRouterWriter, req)
