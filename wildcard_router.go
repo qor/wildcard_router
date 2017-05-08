@@ -43,7 +43,6 @@ func (w *WildcardRouter) Use(middleware func(writer http.ResponseWriter, request
 // ServeHTTP serve http for wildcard router
 func (w *WildcardRouter) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
 	wildcardRouterWriter := &WildcardRouterWriter{writer, 0, false}
-	writer.Header().Set("Content-Type", "text/html; charset=utf-8")
 
 	for _, middleware := range w.middlewares {
 		middleware(writer, req)
@@ -58,7 +57,6 @@ func (w *WildcardRouter) ServeHTTP(writer http.ResponseWriter, req *http.Request
 
 	wildcardRouterWriter.skipNotFoundCheck = true
 	if w.notFoundHandler != nil {
-		writer.WriteHeader(http.StatusNotFound)
 		w.notFoundHandler(writer, req)
 	} else {
 		http.NotFound(wildcardRouterWriter, req)
@@ -98,6 +96,7 @@ func (w *WildcardRouterWriter) Write(data []byte) (int, error) {
 
 func (w *WildcardRouterWriter) reset() {
 	w.skipNotFoundCheck = false
+	w.Header().Set("Content-Type", "")
 	w.status = 0
 }
 
