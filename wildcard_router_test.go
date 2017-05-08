@@ -22,6 +22,7 @@ type ModuleBeforeA struct {
 
 func (a ModuleBeforeA) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	if req.URL.Path == "/module_a0" {
+		w.Header().Set("Content-Type", "text/moduleBeforeA")
 		_, err := w.Write([]byte("Module Before A handled"))
 		if err != nil {
 			panic("ModuleBeforeA A can't handle")
@@ -36,6 +37,7 @@ type ModuleA struct {
 
 func (a ModuleA) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	if req.URL.Path == "/module_a0" || req.URL.Path == "/module_a" || req.URL.Path == "/module_ab" {
+		w.Header().Set("Content-Type", "text/moduleA")
 		_, err := w.Write([]byte("Module A handled"))
 		if err != nil {
 			panic("Module A can't handle")
@@ -50,6 +52,7 @@ type ModuleB struct {
 
 func (b ModuleB) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	if req.URL.Path == "/module_b" || req.URL.Path == "/module_ab" {
+		w.Header().Set("Content-Type", "text/moduleB")
 		_, err := w.Write([]byte("Module B handled"))
 		if err != nil {
 			panic("Module B can't handle")
@@ -63,6 +66,7 @@ func init() {
 	router := gin.Default()
 
 	router.GET("/", func(c *gin.Context) {
+		c.Writer.Header().Set("Content-Type", "text/gin")
 		c.Writer.Write([]byte("Gin Handle HomePage"))
 	})
 
@@ -78,18 +82,19 @@ func init() {
 }
 
 type WildcardRouterTestCase struct {
-	URL              string
-	ExpectStatusCode int
-	ExpectHasContent string
+	URL               string
+	ExpectStatusCode  int
+	ExpectHasContent  string
+	ExpectContentType string
 }
 
 func TestWildcardRouter(t *testing.T) {
 	testCases := []WildcardRouterTestCase{
-		{URL: "/", ExpectStatusCode: 200, ExpectHasContent: "Gin Handle HomePage"},
-		{URL: "/module_a", ExpectStatusCode: 200, ExpectHasContent: "Module A handled"},
-		{URL: "/module_b", ExpectStatusCode: 200, ExpectHasContent: "Module B handled"},
-		{URL: "/module_x", ExpectStatusCode: 404, ExpectHasContent: "Sorry, this page was gone!"},
-		{URL: "/module_a0", ExpectStatusCode: 200, ExpectHasContent: "Module Before A handled"},
+		{URL: "/", ExpectStatusCode: 200, ExpectHasContent: "Gin Handle HomePage", ExpectContentType: "text/gin"},
+		{URL: "/module_a", ExpectStatusCode: 200, ExpectHasContent: "Module A handled", ExpectContentType: "text/moduleA"},
+		{URL: "/module_b", ExpectStatusCode: 200, ExpectHasContent: "Module B handled", ExpectContentType: "text/moduleB"},
+		{URL: "/module_x", ExpectStatusCode: 404, ExpectHasContent: "Sorry, this page was gone!", ExpectContentType: "text/plain; charset=utf-8"},
+		{URL: "/module_a0", ExpectStatusCode: 200, ExpectHasContent: "Module Before A handled", ExpectContentType: "text/moduleBeforeA"},
 	}
 
 	for i, testCase := range testCases {
@@ -102,6 +107,10 @@ func TestWildcardRouter(t *testing.T) {
 		}
 		if string(content) != testCase.ExpectHasContent {
 			t.Errorf(color.RedString(fmt.Sprintf("WildcardRouter #%v: HTML expect have content '%v', but got '%v'", i+1, testCase.ExpectHasContent, string(content))))
+			hasError = true
+		}
+		if req.Header["Content-Type"][0] != testCase.ExpectContentType {
+			t.Errorf(color.RedString(fmt.Sprintf("WildcardRouter #%v: Expect request Content-Type is '%v', but got '%v'", i+1, testCase.ExpectContentType, req.Header["Content-Type"][0])))
 			hasError = true
 		}
 		if !hasError {
