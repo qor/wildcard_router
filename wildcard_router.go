@@ -1,6 +1,7 @@
 package wildcard_router
 
 import (
+	"fmt"
 	"net/http"
 	"strings"
 )
