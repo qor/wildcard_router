@@ -54,6 +54,7 @@ func (w *WildcardRouter) ServeHTTP(writer http.ResponseWriter, req *http.Request
 		}
 		wildcardRouterWriter.reset()
 	}
+	fmt.Printf("Dedug Error:  wildcard_router can't handle the req and current req is %v \n", req)
 
 	wildcardRouterWriter.skipNotFoundCheck = true
 	if w.notFoundHandler != nil {
